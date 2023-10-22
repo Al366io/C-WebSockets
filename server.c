@@ -3,8 +3,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-int close(int fd);
+#include <unistd.h>
 #define MAX_REQUEST_SIZE 1024
 
 int main()
