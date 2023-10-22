@@ -4,7 +4,43 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+
 #define MAX_REQUEST_SIZE 1024
+#define POST "POST"
+#define DELETE "DELETE"
+#define PUT "PUT"
+#define GET "GET"
+
+void send_200(int client_socket)
+{
+    char http_header[] = "HTTP/1.1 200 OK\r\n\n";
+    send(client_socket, http_header, sizeof(http_header), 0);
+}
+
+void send_500(int client_socket)
+{
+    char http_header[] = "HTTP/1.1 500 Internal Server Error\r\n\n";
+    send(client_socket, http_header, sizeof(http_header), 0);
+}
+
+struct parsed_request
+{
+    char method[16];
+    char body[512];
+};
+
+struct parsed_request parse_request(char *request)
+{
+    struct parsed_request req;
+    int i = 0;
+    while ( i < 15 && request[i] != 47) {
+        req.method[i] = request[i];
+        i++;
+    }
+    req.method[i-1] = '\0';
+    
+    return req;
+}
 
 int main()
 {
@@ -42,13 +78,18 @@ int main()
     char request[MAX_REQUEST_SIZE];
     memset(request, 0, sizeof(request));
 
-    // Read the incoming HTTP request
+    // Reading the HTTP request
     recv(client_socket, request, sizeof(request), 0);
 
-    printf("Received HTTP Request:\n%s\n", request);
+    struct parsed_request req = parse_request(request);
 
-    char response[] = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello, World!";
-    send(client_socket, response, strlen(response), 0);
+    printf("%s", req.method);
+
+    if (strcmp(req.method, POST) == 0) {
+        send_200(client_socket);
+    } else {
+        send_500(client_socket);
+    }
     close(server_socket);
     return 0;
 }
